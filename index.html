@@ -17,6 +17,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="무료 아이콘 변환기">
 <meta name="twitter:description" content="사각형·원형 아이콘을 만들고 원하는 크기만 선택해 다운로드하세요.">
+<link rel="icon" href="/favicon.ico" type="image/x-icon">
 <title>무료 아이콘 변환기 - ICO / ICNS / PNG 아이콘 만들기</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -169,6 +170,7 @@ footer a:hover{color:#3157d5}
         <div class="seg">
           <button type="button" class="active" id="shape-square">사각형</button>
           <button type="button" id="shape-circle">원형</button>
+          <button type="button" id="btn-select-all" style="border-left: 1px solid #d8dded;">전체선택</button>
         </div>
       </div>
       <div id="hint" role="status" aria-live="polite">
@@ -244,7 +246,7 @@ var sizes=[16,32,48,64,128,256],selectedSize=256;
 var dz=document.getElementById("dz"),fi=document.getElementById("fi"),edCard=document.getElementById("editor-card");
 var mc=document.getElementById("mc"),sb=document.getElementById("sb"),pg=document.getElementById("pg"),resEl=document.getElementById("result"),dlbEl=document.getElementById("dlb");
 var hint=document.getElementById("hint"),sizeBadge=document.getElementById("size-badge"),ctx=mc.getContext("2d");
-var squareBtn=document.getElementById("shape-square"),circleBtn=document.getElementById("shape-circle");
+var squareBtn=document.getElementById("shape-square"),circleBtn=document.getElementById("shape-circle"),selectAllBtn=document.getElementById("btn-select-all");
 var masks={top:document.getElementById("mask-top"),bot:document.getElementById("mask-bot"),left:document.getElementById("mask-left"),right:document.getElementById("mask-right")};
 var okIcon='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22a65a" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>';
 var cropIcon='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3157d5" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6v6H9z"/></svg>';
@@ -254,11 +256,28 @@ function setShape(next){
   shape=next;
   squareBtn.classList.toggle("active",shape==="square");
   circleBtn.classList.toggle("active",shape==="circle");
+  selectAllBtn.classList.remove("active");
   sb.classList.toggle("circle",shape==="circle");
   if(lastCrop)genPrev();
 }
+function selectAllArea(){
+  if(!img)return;
+  hideMasks();
+  sx=0;sy=0;ex=mc.width;ey=mc.height;
+  drag=false;
+  sb.style.display="block";
+  sb.classList.toggle("circle",shape==="circle");
+  squareBtn.classList.remove("active");
+  circleBtn.classList.remove("active");
+  sizeBadge.style.display="block";
+  updSel();
+  lastCrop=cropC();
+  selectAllBtn.classList.add("active");
+  genPrev();
+}
 squareBtn.onclick=function(){setShape("square");};
 circleBtn.onclick=function(){setShape("circle");};
+if(selectAllBtn){selectAllBtn.onclick=function(){selectAllArea()};}
 dz.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();fi.click();}});
 dz.addEventListener("dragover",function(e){e.preventDefault();dz.classList.add("ov");});
 dz.addEventListener("dragleave",function(){dz.classList.remove("ov");});
@@ -275,7 +294,7 @@ function loadFile(f){
     i.onload=function(){
       img=i;lastCrop=null;drawImg();
       edCard.style.display="block";resEl.style.display="none";pg.innerHTML="";dlbEl.innerHTML="";
-      sb.style.display="none";hideMasks();selectedSize=256;
+      sb.style.display="none";hideMasks();selectAllBtn.classList.remove("active");selectedSize=256;
       hint.innerHTML=cropIcon+" 이미지 위에서 드래그해 아이콘으로 만들 영역을 선택하세요.";
       setTimeout(function(){edCard.scrollIntoView({behavior:"smooth",block:"start"});},100);
     };
@@ -291,7 +310,8 @@ function drawImg(){
 }
 function pos(e){
   var r=mc.getBoundingClientRect(),point=e.touches?e.touches[0]:e;
-  return{x:Math.max(0,Math.min(mc.width,point.clientX-r.left)),y:Math.max(0,Math.min(mc.height,point.clientY-r.top))};
+  var scaleX=mc.width/r.width,scaleY=mc.height/r.height;
+  return{x:Math.max(0,Math.min(mc.width,(point.clientX-r.left)*scaleX)),y:Math.max(0,Math.min(mc.height,(point.clientY-r.top)*scaleY))};
 }
 mc.addEventListener("mousedown",startD);
 mc.addEventListener("touchstart",function(e){e.preventDefault();startD(e);},{passive:false});
@@ -299,7 +319,7 @@ document.addEventListener("mousemove",moveD);
 document.addEventListener("touchmove",function(e){if(drag){e.preventDefault();moveD(e);}},{passive:false});
 document.addEventListener("mouseup",endD);
 document.addEventListener("touchend",endD);
-function startD(e){var p=pos(e);sx=p.x;sy=p.y;ex=p.x;ey=p.y;drag=true;sb.style.display="block";sizeBadge.style.display="block";updSel();resEl.style.display="none";}
+function startD(e){var p=pos(e);sx=p.x;sy=p.y;ex=p.x;ey=p.y;drag=true;selectAllBtn.classList.remove("active");sb.style.display="block";sizeBadge.style.display="block";updSel();resEl.style.display="none";}
 function moveD(e){if(!drag)return;var p=pos(e);ex=p.x;ey=p.y;updSel();}
 function endD(){
   if(!drag)return;drag=false;sizeBadge.style.display="none";
